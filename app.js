@@ -47,6 +47,10 @@ const PRATOS = [
 ];
 
 // ---------------------------------------------------------------
+// Suba este numero sempre que um .glb mudar. Sem isso o iPhone e o
+// Scene Viewer continuam usando o arquivo antigo que ja' baixaram.
+const VERSAO_MODELOS = 2;
+
 const $ = (s) => document.querySelector(s);
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -126,9 +130,10 @@ function abrir(prato) {
 
   mv.alt = prato.nome;
   mv.dataset.larguraCm = prato.larguraCm ?? '';
-  if (prato.modeloIos) mv.setAttribute('ios-src', prato.modeloIos);
+  const v = `?v=${VERSAO_MODELOS}`;
+  if (prato.modeloIos) mv.setAttribute('ios-src', prato.modeloIos + v);
   else mv.removeAttribute('ios-src');
-  mv.src = prato.modelo;
+  mv.src = prato.modelo + v;
 
   folha.hidden = false;
   document.body.style.overflow = 'hidden';
