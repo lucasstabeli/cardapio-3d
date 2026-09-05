@@ -26,12 +26,15 @@ python -m http.server 5173
 
 Abra <http://localhost:5173>.
 
-**No computador o AR não abre** — só dá para girar o modelo. Para testar na
-mesa de verdade você precisa de **HTTPS**, porque a câmera não roda em
-`http://` fora do localhost. Caminhos:
+**No computador o AR não abre** — só dá para girar o modelo. A câmera exige
+HTTPS, então o teste de verdade é sempre pelo celular.
 
-- publicar em Vercel, Netlify ou GitHub Pages (é um site estático, sobe direto);
-- ou um túnel: `cloudflared tunnel --url http://localhost:5173`.
+## No ar
+
+<https://lucasstabeli.github.io/cardapio-3d/>
+
+Publicado no GitHub Pages a partir da branch `main`. Todo push republica
+sozinho, em cerca de um minuto. HTTPS é obrigatório e o próprio Pages força.
 
 ## A escala é o ponto crítico
 
