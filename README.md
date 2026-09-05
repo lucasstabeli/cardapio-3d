@@ -36,6 +36,19 @@ HTTPS, então o teste de verdade é sempre pelo celular.
 Publicado no GitHub Pages a partir da branch `main`. Todo push republica
 sozinho, em cerca de um minuto. HTTPS é obrigatório e o próprio Pages força.
 
+## Dois modos de ver
+
+**Na mesa** — usa o AR nativo (Quick Look no iPhone, Scene Viewer no Android).
+Ancora de verdade na superfície: você anda em volta e o prato fica parado.
+Só funciona em superfície plana; não pousa na mão, porque esses
+visualizadores detectam planos e mais nada.
+
+**Na mão** (`mao.js`) — lê a câmera direto e usa o MediaPipe para achar os
+pontos da mão, desenhando o prato sobre a palma. A largura da palma
+(~8 cm) serve de régua para converter metros em pixels, então a escala
+continua real. Não tem profundidade verdadeira: é composição sobre a
+imagem, não ancoragem 3D. Em compensação funciona onde o AR nativo não vai.
+
 ## A escala é o ponto crítico
 
 No AR, **1 unidade do `.glb` = 1 metro**. Modelo exportado fora dessa escala

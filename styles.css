@@ -198,3 +198,31 @@ model-viewer::part(default-ar-button){display:none}
   color:var(--texto-2);font-size:13px;line-height:1.5;
 }
 .dica-ar b{color:var(--texto)}
+
+/* ---------- botão "na minha mão" ---------- */
+.btn-mao{
+  margin-top:10px;width:100%;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  background:var(--card-2);color:var(--texto);
+  border:1px solid #4a423b;border-radius:12px;
+  padding:14px;font-size:15px;font-weight:600;font-family:inherit;
+  cursor:pointer;
+}
+.btn-mao:active{background:#2f2b28}
+.btn-mao svg{width:19px;height:19px;fill:var(--marca)}
+
+/* ---------- tela da câmera ---------- */
+.mao{position:fixed;inset:0;z-index:60;background:#000;overflow:hidden}
+.mao-video,.mao-canvas{position:absolute;inset:0;width:100%;height:100%}
+.mao-video{object-fit:cover}
+.mao-canvas{pointer-events:none}
+.mao-barra{
+  position:absolute;left:12px;right:12px;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.12);border-radius:12px;
+  padding:11px 14px;color:#fff;
+  display:flex;flex-direction:column;gap:3px;
+}
+.mao-barra strong{font-size:15px}
+.mao-barra span{font-size:12px;color:#bdb4aa}

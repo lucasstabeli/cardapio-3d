@@ -63,6 +63,7 @@ const aviso   = $('#aviso');
 const medidas = $('#medidas');
 const spinner = $('#spinner');
 const dicaAr  = $('#dica-ar');
+const btnMao  = $('#btn-mao');
 
 let categoriaAtiva = 'Todos';
 
@@ -120,7 +121,10 @@ grade.addEventListener('click', (e) => {
 // ---------------------------------------------------------------
 // Tela do prato
 // ---------------------------------------------------------------
+let pratoAtual = null;
+
 function abrir(prato) {
+  pratoAtual = prato;
   $('#f-nome').textContent = prato.nome;
   $('#f-preco').textContent = brl.format(prato.preco);
   $('#f-desc').textContent = prato.desc;
@@ -202,6 +206,32 @@ function estadoAr() {
 }
 
 btnAr.addEventListener('click', () => mv.activateAR());
+
+// O modo "na minha mão" nao depende do AR nativo — so' de camera.
+if (navigator.mediaDevices?.getUserMedia) {
+  btnMao.hidden = false;
+  btnMao.addEventListener('click', async () => {
+    // O Safari do iPhone so' libera a camera se getUserMedia for chamado
+    // dentro do gesto do usuario. Carregar o modulo antes quebra isso,
+    // entao a camera vem primeiro e o resto depois.
+    let fluxo;
+    try {
+      fluxo = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 } },
+        audio: false,
+      });
+    } catch (e) {
+      aviso.hidden = false;
+      aviso.textContent =
+        'Nao consegui abrir a camera (' + e.name + '). ' +
+        'Toque em "aA" na barra de endereco > Configuracoes do Site > Camera > Permitir.';
+      return;
+    }
+
+    const { abrirMao } = await import('./mao.js?v=4');
+    await abrirMao(pratoAtual, pratoAtual.modelo + `?v=${VERSAO_MODELOS}`, fluxo);
+  });
+}
 mv.addEventListener('ar-status', (e) => {
   if (e.detail.status === 'failed') {
     aviso.hidden = false;

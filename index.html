@@ -5,7 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#12100e" />
   <title>Cardápio 3D</title>
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.3.1/dist/model-viewer.min.js"></script>
 </head>
 <body>
@@ -69,10 +77,26 @@
         Ver na minha mesa
       </button>
 
+      <button class="btn-mao" id="btn-mao" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 1.5a1.5 1.5 0 0 0-3 0V10H9V3.5a1.5 1.5 0 0 0-3 0V13l-1.2-2a1.5 1.5 0 0 0-2.6 1.5l3 5.4A7 7 0 0 0 11.4 22H14a6 6 0 0 0 6-6V6.5a1.5 1.5 0 0 0-3 0V10h-1V3.5a1.5 1.5 0 0 0-3 0V10h-1V1.5z"/></svg>
+        Ver na minha mão
+      </button>
+
       <p class="aviso" id="aviso" hidden></p>
     </div>
   </div>
 
-  <script type="module" src="app.js?v=3"></script>
+  <!-- Modo "na minha mão": câmera + detecção de mão -->
+  <div class="mao" id="mao" hidden>
+    <video class="mao-video" id="mao-video" playsinline muted></video>
+    <canvas class="mao-canvas" id="mao-canvas"></canvas>
+    <button class="fechar" id="mao-fechar" aria-label="Fechar">&times;</button>
+    <div class="mao-barra">
+      <strong id="mao-titulo"></strong>
+      <span id="mao-estado"></span>
+    </div>
+  </div>
+
+  <script type="module" src="app.js?v=4"></script>
 </body>
 </html>
