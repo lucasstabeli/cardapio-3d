@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#12100e" />
+  <title>Cardápio 3D</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.3.1/dist/model-viewer.min.js"></script>
+</head>
+<body>
+
+  <header class="topo">
+    <div class="topo-inner">
+      <h1>Cardápio</h1>
+      <p class="sub">Toque em um prato para ver o tamanho real na sua mesa</p>
+    </div>
+  </header>
+
+  <nav class="filtros" id="filtros"></nav>
+
+  <main class="grade" id="grade"></main>
+
+  <footer class="rodape">
+    <p>Precisa de celular com câmera. No iPhone use o Safari, no Android use o Chrome.</p>
+  </footer>
+
+  <!-- Tela do prato / AR -->
+  <div class="folha" id="folha" hidden>
+    <button class="fechar" id="fechar" aria-label="Fechar">&times;</button>
+
+    <div class="visor">
+      <model-viewer
+        id="mv"
+        alt=""
+        ar
+        loading="eager"
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="fixed"
+        ar-placement="floor"
+        camera-controls
+        touch-action="pan-y"
+        shadow-intensity="1"
+        environment-image="neutral"
+        exposure="1"
+        interaction-prompt="auto">
+        <div class="carregando" id="spinner" slot="progress-bar"></div>
+      </model-viewer>
+
+      <div class="medidas" id="medidas" hidden></div>
+    </div>
+
+    <div class="ficha">
+      <div class="ficha-linha">
+        <h2 id="f-nome"></h2>
+        <span class="preco" id="f-preco"></span>
+      </div>
+      <p class="desc" id="f-desc"></p>
+
+      <button class="btn-ar" id="btn-ar" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5zm0 2.3 6.5 3.6L12 11.5 5.5 7.9 12 4.3zM5 9.6l6 3.3v6.8l-6-3.3V9.6zm8 10.1v-6.8l6-3.3v6.8l-6 3.3z"/></svg>
+        Ver na minha mesa
+      </button>
+
+      <p class="aviso" id="aviso" hidden></p>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
