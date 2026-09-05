@@ -62,6 +62,7 @@ const btnAr   = $('#btn-ar');
 const aviso   = $('#aviso');
 const medidas = $('#medidas');
 const spinner = $('#spinner');
+const dicaAr  = $('#dica-ar');
 
 let categoriaAtiva = 'Todos';
 
@@ -188,9 +189,11 @@ mv.addEventListener('load', () => {
 function estadoAr() {
   if (mv.canActivateAR) {
     btnAr.hidden = false;
+    dicaAr.hidden = false;
     aviso.hidden = true;
   } else {
     btnAr.hidden = true;
+    dicaAr.hidden = true;
     aviso.hidden = false;
     aviso.textContent = location.protocol === 'https:' || location.hostname === 'localhost'
       ? 'Este aparelho não abre a câmera em AR. Abra o cardápio no celular (Safari no iPhone, Chrome no Android) para ver o prato na mesa.'

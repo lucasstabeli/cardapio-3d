@@ -190,3 +190,11 @@ model-viewer::part(default-ar-button){display:none}
   text-decoration:underline;cursor:pointer;
   padding:6px 10px;
 }
+
+.dica-ar{
+  margin:14px 0 0;padding:11px 13px;
+  background:var(--card-2);border:1px solid var(--linha);
+  border-left:3px solid var(--marca);border-radius:10px;
+  color:var(--texto-2);font-size:13px;line-height:1.5;
+}
+.dica-ar b{color:var(--texto)}
