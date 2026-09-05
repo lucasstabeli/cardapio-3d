@@ -171,3 +171,14 @@ model-viewer::part(default-ar-button){display:none}
   background:var(--card-2);border:1px solid var(--linha);border-radius:12px;
   color:var(--texto-2);font-size:13px;text-align:center;
 }
+
+/* diagnóstico (?debug=1) */
+.debug{
+  position:fixed;left:0;right:0;bottom:0;z-index:99;
+  margin:0;padding:10px 12px;
+  background:rgba(0,0,0,.86);color:#8ef58e;
+  font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  white-space:pre-wrap;word-break:break-all;
+  border-top:1px solid #2f4a2f;
+  max-height:42vh;overflow:auto;
+}

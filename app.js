@@ -206,3 +206,45 @@ customElements.whenDefined('model-viewer').then(estadoAr);
 // ---------------------------------------------------------------
 montarFiltros();
 montarGrade();
+
+// ---------------------------------------------------------------
+// Diagnóstico — abra a página com ?debug=1 para ver o que o
+// aparelho suporta e qual modo de AR foi realmente acionado.
+// ---------------------------------------------------------------
+if (new URLSearchParams(location.search).has('debug')) {
+  const caixa = document.createElement('pre');
+  caixa.className = 'debug';
+  document.body.appendChild(caixa);
+
+  const eventos = [];
+  const ua = navigator.userAgent;
+
+  async function relatorio() {
+    let webxr = 'não';
+    try {
+      if (navigator.xr) {
+        webxr = (await navigator.xr.isSessionSupported('immersive-ar')) ? 'sim' : 'não';
+      }
+    } catch (e) {
+      webxr = 'erro: ' + e.message;
+    }
+
+    caixa.textContent = [
+      `aparelho   : ${/iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Android/i.test(ua) ? 'Android' : 'outro'}`,
+      `navegador  : ${/CriOS/.test(ua) ? 'Chrome iOS' : /Safari/.test(ua) && !/Chrome/.test(ua) ? 'Safari' : /Chrome/.test(ua) ? 'Chrome' : '?'}`,
+      `https      : ${location.protocol === 'https:' ? 'sim' : 'NÃO'}`,
+      `webxr AR   : ${webxr}`,
+      `pode abrir : ${mv.canActivateAR}`,
+      `ar-modes   : ${mv.getAttribute('ar-modes')}`,
+      `eventos    : ${eventos.join(' > ') || '(nenhum)'}`,
+      `ua         : ${ua}`,
+    ].join('\n');
+  }
+
+  mv.addEventListener('ar-status', (e) => {
+    eventos.push(e.detail.status);
+    relatorio();
+  });
+  mv.addEventListener('load', relatorio);
+  relatorio();
+}
