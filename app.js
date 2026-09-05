@@ -211,40 +211,53 @@ montarGrade();
 // Diagnóstico — abra a página com ?debug=1 para ver o que o
 // aparelho suporta e qual modo de AR foi realmente acionado.
 // ---------------------------------------------------------------
-if (new URLSearchParams(location.search).has('debug')) {
-  const caixa = document.createElement('pre');
-  caixa.className = 'debug';
-  document.body.appendChild(caixa);
+let caixaDiag = null;
 
-  const eventos = [];
-  const ua = navigator.userAgent;
-
-  async function relatorio() {
-    let webxr = 'não';
-    try {
-      if (navigator.xr) {
-        webxr = (await navigator.xr.isSessionSupported('immersive-ar')) ? 'sim' : 'não';
-      }
-    } catch (e) {
-      webxr = 'erro: ' + e.message;
-    }
-
-    caixa.textContent = [
-      `aparelho   : ${/iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Android/i.test(ua) ? 'Android' : 'outro'}`,
-      `navegador  : ${/CriOS/.test(ua) ? 'Chrome iOS' : /Safari/.test(ua) && !/Chrome/.test(ua) ? 'Safari' : /Chrome/.test(ua) ? 'Chrome' : '?'}`,
-      `https      : ${location.protocol === 'https:' ? 'sim' : 'NÃO'}`,
-      `webxr AR   : ${webxr}`,
-      `pode abrir : ${mv.canActivateAR}`,
-      `ar-modes   : ${mv.getAttribute('ar-modes')}`,
-      `eventos    : ${eventos.join(' > ') || '(nenhum)'}`,
-      `ua         : ${ua}`,
-    ].join('\n');
+async function mostrarDiagnostico() {
+  if (caixaDiag) {                 // já aberto -> fecha
+    caixaDiag.remove();
+    caixaDiag = null;
+    return;
   }
 
-  mv.addEventListener('ar-status', (e) => {
-    eventos.push(e.detail.status);
-    relatorio();
+  caixaDiag = document.createElement('pre');
+  caixaDiag.className = 'debug';
+  document.body.appendChild(caixaDiag);
+
+  let webxr = 'nao';
+  try {
+    if (navigator.xr) {
+      webxr = (await navigator.xr.isSessionSupported('immersive-ar')) ? 'sim' : 'nao';
+    }
+  } catch (e) {
+    webxr = 'erro: ' + e.message;
+  }
+
+  const ua = navigator.userAgent;
+  caixaDiag.textContent = [
+    `aparelho   : ${/iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Android/i.test(ua) ? 'Android' : 'outro'}`,
+    `navegador  : ${/CriOS/.test(ua) ? 'Chrome iOS' : /Safari/.test(ua) && !/Chrome/.test(ua) ? 'Safari' : /Chrome/.test(ua) ? 'Chrome' : '?'}`,
+    `https      : ${location.protocol === 'https:' ? 'sim' : 'NAO'}`,
+    `webxr AR   : ${webxr}`,
+    `pode abrir : ${mv.canActivateAR}`,
+    `ar-modes   : ${mv.getAttribute('ar-modes')}`,
+    `eventos    : ${eventosAr.join(' > ') || '(nenhum)'}`,
+    `ua         : ${ua}`,
+  ].join(`
+`);
+
+  caixaDiag.addEventListener('click', () => {
+    navigator.clipboard?.writeText(caixaDiag.textContent);
+    caixaDiag.style.borderTopColor = '#8ef58e';
   });
-  mv.addEventListener('load', relatorio);
-  relatorio();
 }
+
+// guarda os eventos de AR desde o começo, mesmo com o painel fechado
+const eventosAr = [];
+mv.addEventListener('ar-status', (e) => {
+  eventosAr.push(e.detail.status);
+  if (caixaDiag) { caixaDiag.remove(); caixaDiag = null; mostrarDiagnostico(); }
+});
+
+$('#abrir-diag').addEventListener('click', mostrarDiagnostico);
+if (new URLSearchParams(location.search).has('debug')) mostrarDiagnostico();

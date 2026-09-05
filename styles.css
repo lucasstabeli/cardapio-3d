@@ -182,3 +182,11 @@ model-viewer::part(default-ar-button){display:none}
   border-top:1px solid #2f4a2f;
   max-height:42vh;overflow:auto;
 }
+
+.link-diag{
+  margin-top:10px;
+  background:none;border:0;
+  color:#5f574f;font:inherit;font-size:12px;
+  text-decoration:underline;cursor:pointer;
+  padding:6px 10px;
+}
