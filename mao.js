@@ -22,10 +22,15 @@
 //     dois) diz a que profundidade ela esta'. O prato entra na cena com
 //     escala 1 — um metro do .glb e' um metro na tela.
 //
-//  3. A mesa vem do giroscopio. A gravidade diz para onde e' baixo,
-//     entao da' para saber onde o eixo da camera fura o plano da mesa.
-//     O ponto e' fixado no mundo, nao na tela: girando o aparelho o
-//     prato fica onde foi posto.
+//  3. A mesa vem do giroscopio. A gravidade diz para onde e' baixo, entao
+//     da' para saber quando o centro da camera esta' olhando para uma
+//     superficie horizontal. Achou, pousa ali sozinho — nao ha' botao.
+//     O ponto fica fixo no mundo, nao na tela: girando o aparelho o prato
+//     fica onde foi posto.
+//
+//     A distancia ate' essa superficie e' medida UMA vez e trava. E' o que
+//     garante tamanho constante: um prato tem um tamanho so' e nao pode
+//     crescer nem encolher porque o celular se mexeu.
 //
 //  4. Deteccao e desenho sao separados. A mao e' procurada uma vez por
 //     quadro da camera e o desenho corre a 60 fps atras da pose achada,
@@ -41,6 +46,7 @@ const MODELO_MAO =
 const PALMA_M     = 0.08;   // largura da palma de um adulto, em metros
 const FOV_H       = 65;     // abertura horizontal tipica de camera de celular
 const ALTURA_MESA = 0.35;   // altura do celular acima da mesa, em metros
+const SENO_MESA   = 0.28;   // inclinacao minima (~16 graus) para valer mesa
 const TOLERANCIA_MS = 700;  // tempo que a mao pode sumir antes de virar mesa
 const INCLINACAO  = 0.45;   // 0 = o prato segue a palma; 1 = sempre de frente
 
@@ -54,7 +60,7 @@ const video   = document.querySelector('#mao-video');
 const canvas  = document.querySelector('#mao-canvas');
 const estado  = document.querySelector('#mao-estado');
 const titulo  = document.querySelector('#mao-titulo');
-const btnFirmar = document.querySelector('#mao-firmar');
+const mira    = document.querySelector('#mao-mira');
 
 let renderer, cena, camera, modelo, sombra, detector;
 let rodando = false, fluxo = null;
@@ -71,10 +77,12 @@ let pxPorMetroAnt = 0;
 let focoPx = 0;                // distancia focal em pixels de tela
 let ultimoTexto = '';
 
-// mesa: ponto fixo no mundo onde o prato foi pousado, e como ele ficou virado
+// mesa: ponto fixo no mundo onde o prato foi pousado, e como ele ficou virado.
+// distanciaMesa e' medida uma vez so' e nao muda mais — e' o que segura o
+// tamanho do prato quando o celular se mexe.
 const ancora = new THREE.Vector3(0, -ALTURA_MESA, -0.6);
 const qAncora = new THREE.Quaternion();
-let mesaFirme = false, precisaAncorar = true, foraDesde = 0;
+let distanciaMesa = 0, pousado = false, foraDesde = 0;
 
 // giroscopio
 const qAparelho = new THREE.Quaternion();
@@ -333,43 +341,37 @@ function alvoNaMao(mao) {
   alvo.pos.addScaledVector(cima, modelo.userData.alturaM / 2);
 
   if (modelo.userData.larguraM * pxPorMetro > tela.clientWidth * 1.15) {
-    dizer('na sua mao — afaste o celular para ver o prato inteiro');
+    dizer('na sua mao, ' + medidaDoPrato() + ' — afaste a mao para ve-lo inteiro');
   } else {
-    dizer('na sua mao — ' + Math.round(fundo * 100) + ' cm da camera');
+    dizer('na sua mao, ' + medidaDoPrato() + ' no tamanho real');
   }
   return true;
 }
 
 // ---------------------------------------------------------------
 // Alvo quando nao ha' mao: a superficie apontada
+//
+// O centro da camera e' a sonda. Se a gravidade diz que o celular esta'
+// inclinado para baixo, o eixo da camera fura uma superficie horizontal,
+// e o prato e' pousado ali sozinho — sem botao.
+//
+// A distancia ate' essa superficie e' medida UMA vez e fica travada. E'
+// isso que da' tamanho constante: inclinando o celular, so' a direcao
+// muda, entao o prato passeia pelo quadro sem crescer nem encolher.
 // ---------------------------------------------------------------
-function ancorarMesa() {
-  const frente = new THREE.Vector3(0, 0, -1).applyQuaternion(qAparelho);
+function distanciaDaMesa(frente) {
+  // o quanto o prato precisa estar longe para caber inteiro no quadro
+  const cabe = modelo.userData.larguraM * focoPx / (tela.clientWidth * 0.9);
 
-  // o eixo da camera fura o plano da mesa se estiver apontando para baixo
-  if (frente.y < -0.2) {
-    const t = Math.min(Math.max(-ALTURA_MESA / frente.y, 0.25), 2);
-    ancora.copy(frente).multiplyScalar(t);
-    ancora.y = -ALTURA_MESA;
-    mesaFirme = true;
-  } else {
-    // camera na horizontal (ou sem giroscopio): nao da' para saber onde
-    // esta' a mesa, entao o prato fica 12 graus abaixo do eixo, na
-    // distancia em que ele cabe no quadro. Assim aparece embaixo, inteiro.
-    const l = tela.clientWidth;
-    const cabe = Math.min(
-      Math.max(modelo.userData.larguraM * focoPx / (l * 0.65), 0.3), 2
-    );
-    const passo = new THREE.Vector3(0, -Math.tan(12 * Math.PI / 180), -1)
-      .normalize()
-      .multiplyScalar(cabe)
-      .applyQuaternion(qAparelho);
-    ancora.copy(passo);
-    mesaFirme = false;
-  }
+  // e o quanto a gravidade diz que a mesa esta'. Vale a maior das duas:
+  // um peixe de 45 cm visto a 35 cm nao caberia na tela de jeito nenhum.
+  const daGravidade = frente.y < -SENO_MESA ? -ALTURA_MESA / frente.y : 0;
+  return Math.min(Math.max(Math.max(cabe, daGravidade), 0.25), 2.5);
+}
 
-  // vira o prato de lado para quem olha: um peixe de 45 cm apontado para a
-  // camera vira um ponto, atravessado no quadro mostra o tamanho de verdade
+// vira o prato de lado para quem olha: um peixe de 45 cm apontado para a
+// camera vira um ponto, atravessado no quadro mostra o tamanho de verdade
+function virarParaQuemOlha(frente) {
   const rasante = new THREE.Vector3(frente.x, 0, frente.z);
   if (rasante.lengthSq() < 1e-6) rasante.set(0, 0, -1);
   rasante.normalize();
@@ -377,42 +379,63 @@ function ancorarMesa() {
     ? Math.atan2(-rasante.z, rasante.x)
     : Math.atan2(-rasante.x, -rasante.z);
   qAncora.setFromAxisAngle(new THREE.Vector3(0, 1, 0), giro);
+}
 
-  precisaAncorar = false;
+function pousarMesa(frente) {
+  // a distancia so' e' medida na primeira vez; depois disso ela e' lei
+  if (!distanciaMesa) distanciaMesa = distanciaDaMesa(frente);
+  ancora.copy(frente).multiplyScalar(distanciaMesa);
+  virarParaQuemOlha(frente);
+  pousado = true;
   foraDesde = 0;
 }
 
 function alvoNaMesa(agora) {
-  if (precisaAncorar) ancorarMesa();
+  const frente = new THREE.Vector3(0, 0, -1).applyQuaternion(qAparelho);
+
+  // ainda procurando: so' pousa quando o centro da camera estiver mesmo
+  // olhando para baixo. Sem giroscopio nao ha' como saber, entao pousa
+  // do jeito que der e avisa.
+  if (!pousado) {
+    if (!temGiro) {
+      pousarMesa(new THREE.Vector3(0, -Math.tan(12 * Math.PI / 180), -1).normalize());
+    } else if (frente.y < -SENO_MESA) {
+      pousarMesa(frente);
+    } else {
+      dizer('aponte o centro da camera para a mesa');
+      return false;
+    }
+  }
 
   const inverso = qAparelho.clone().invert();
   alvo.pos
     .copy(ancora)
-    .setY(ancora.y + modelo.userData.alturaM / 2)
-    .applyQuaternion(inverso);
+    .applyQuaternion(inverso)
+    .addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(inverso),
+                     modelo.userData.alturaM / 2);
   alvo.quat.copy(inverso).multiply(qAncora);
 
-  // o prato saiu do quadro? depois de um instante ele e' pousado de novo
+  // o prato saiu do quadro? depois de um instante ele e' pousado de novo,
+  // na direcao nova mas na MESMA distancia — o tamanho nao muda
   const naTela = alvo.pos.clone().project(camera);
   const dentro = alvo.pos.z < 0 &&
-    Math.abs(naTela.x) < 1.1 && Math.abs(naTela.y) < 1.1;
+    Math.abs(naTela.x) < 0.85 && Math.abs(naTela.y) < 0.85;
   if (dentro) {
     foraDesde = 0;
   } else if (!foraDesde) {
     foraDesde = agora;
-  } else if (agora - foraDesde > 900) {
-    precisaAncorar = true;
+  } else if (agora - foraDesde > 900 && (!temGiro || frente.y < -SENO_MESA)) {
+    pousarMesa(frente);
   }
 
-  // um prato grande visto de perto nao cabe no quadro — e' o tamanho certo,
-  // so' falta espaco
-  const larguraPx = modelo.userData.larguraM * focoPx / Math.max(-alvo.pos.z, 0.05);
+  const onde = temGiro ? 'na mesa, ' : 'a frente (sem giroscopio), ';
+  if (!detector) dizer(onde + medidaDoPrato() + ' — preparando a deteccao de mao...');
+  else dizer(onde + medidaDoPrato() + ' — mostre a mao para pega-lo');
+  return true;
+}
 
-  if (!detector) dizer('na superficie a frente — preparando a deteccao de mao...');
-  else if (larguraPx > tela.clientWidth * 1.15) dizer('afaste o celular para ver o prato inteiro');
-  else if (!temGiro) dizer('na superficie a frente — mostre a mao para pegar o prato');
-  else if (mesaFirme) dizer('na mesa — mostre a mao para o prato ir para a palma');
-  else dizer('incline o celular para baixo, na direcao da mesa');
+function medidaDoPrato() {
+  return Math.round(modelo.userData.larguraM * 100) + ' cm';
 }
 
 // ---------------------------------------------------------------
@@ -441,7 +464,7 @@ function detectar(agora, meta) {
     const mao = melhorMao(r);
     if (mao && alvoNaMao(mao)) {
       achadaEm = performance.now();
-      if (modo !== 'mao') { modo = 'mao'; precisaAncorar = true; }
+      modo = 'mao';   // a ancora da mesa fica intacta, com a distancia dela
     }
   } catch (e) {
     dizer('erro na deteccao: ' + e.message);
@@ -465,13 +488,18 @@ function laco(agora) {
   ajustarTamanho();
 
   // a mao sumiu ha' um tempo: o prato desce para a superficie apontada
+  let mostrar = true;
   if (agora - achadaEm > TOLERANCIA_MS) {
     modo = 'mesa';
-    alvoNaMesa(agora);
+    mostrar = alvoNaMesa(agora);
   }
 
+  // enquanto nao achou onde pousar, so' a mira aparece
+  modelo.visible = mostrar;
+  mira.hidden = mostrar;
   sombra.visible = modo === 'mesa';
-  btnFirmar.hidden = modo !== 'mesa';
+
+  if (!mostrar) { renderer.render(cena, camera); return; }
 
   if (!temPose) {
     atual.pos.copy(alvo.pos);
@@ -500,7 +528,10 @@ const giroAux = new THREE.Quaternion();
 
 function lerGiro(e) {
   if (e.alpha == null || e.beta == null || e.gamma == null) return;
-  temGiro = true;
+
+  // primeira leitura de verdade: o que foi pousado antes dela estava num
+  // referencial cego, entao o prato e' pousado de novo, agora com gravidade
+  if (!temGiro) { temGiro = true; pousado = false; distanciaMesa = 0; }
   const rad = Math.PI / 180;
   const orient = ((screen.orientation && screen.orientation.angle) || 0) * rad;
 
@@ -535,7 +566,8 @@ export async function abrirMao(prato, urlModelo, fluxoCamera) {
   achadaEm = 0;
   ultimoTs = -1;
   pxPorMetroAnt = 0;
-  precisaAncorar = true;
+  distanciaMesa = 0;
+  pousado = false;
   ultimoQuadro = performance.now();
   rodando = true;
   requestAnimationFrame(laco);
@@ -556,5 +588,4 @@ export function fecharMao() {
 }
 
 document.querySelector('#mao-fechar').addEventListener('click', fecharMao);
-btnFirmar.addEventListener('click', () => { precisaAncorar = true; });
 addEventListener('resize', () => { if (rodando) ajustarTamanho(); });

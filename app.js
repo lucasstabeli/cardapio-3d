@@ -230,7 +230,7 @@ if (TEM_CAMERA) {
     // sem o giroscopio o prato ainda aparece, so' nao fica preso na mesa
     await pedidoGiro;
 
-    const { abrirMao } = await import('./mao.js?v=7');
+    const { abrirMao } = await import('./mao.js?v=8');
     await abrirMao(pratoAtual, pratoAtual.modelo + `?v=${VERSAO_MODELOS}`, fluxo);
   });
 }

@@ -48,10 +48,35 @@ ninguém escolhe o modo.
   troca de lado entre a esquerda e a direita. A distância é medida: o tamanho
   da mão em pixels contra o tamanho dela em metros diz a que profundidade ela
   está, e o prato entra na cena em escala 1.
-- **Mesa** — a gravidade lida no giroscópio diz onde o eixo da câmera fura o
-  plano da mesa. O ponto fica fixo no mundo, não na tela: girando o aparelho
-  o prato fica onde foi posto. Sem giroscópio ele aparece à frente, mais abaixo.
-  Não há rastreio de translação — andando, o prato acompanha.
+- **Mesa** — o centro da câmera é a sonda. Enquanto não houver superfície,
+  aparece só uma mira e nenhum prato. A gravidade lida no giroscópio diz
+  quando o eixo da câmera está mesmo olhando para baixo; aí o prato pousa
+  ali sozinho, sem botão. O ponto fica fixo no mundo, não na tela: girando o
+  aparelho o prato fica onde foi posto. Sem giroscópio ele aparece à frente e
+  a barra avisa. Não há rastreio de translação — andando, o prato acompanha.
+
+## O tamanho não pode mudar
+
+O ponto do cardápio é o cliente saber de que tamanho é a comida, então o
+prato não pode crescer nem encolher enquanto ele mexe o celular.
+
+Dois cuidados garantem isso:
+
+1. **A largura real vem do `larguraCm`**, nunca do arquivo. Um `.glb`
+   exportado em qualquer escala aparece do tamanho certo.
+2. **A distância até a mesa é medida uma vez e trava.** Antes ela era
+   recalculada da inclinação a cada repouso, então bastava inclinar o
+   celular para o prato mudar de tamanho. Agora, uma vez pousado, só a
+   direção muda: o prato passeia pelo quadro sem mudar de tamanho. Medido
+   com giroscópio simulado — de 25° para 45° de inclinação, a largura
+   desenhada ficou em 708 px nos dois.
+
+Na mão o tamanho acompanha a mão, e isso está certo: a mão é a régua, e o
+prato cresce com ela exatamente como um prato de verdade cresceria.
+
+A distância travada é a maior entre duas: a que a gravidade indica e a que
+faz o prato caber inteiro no quadro. Sem isso um peixe de 45 cm visto a 35 cm
+transbordaria a tela e não daria para julgar nada.
 
 
 ## A escala é o ponto crítico
