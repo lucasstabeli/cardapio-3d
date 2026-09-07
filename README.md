@@ -1,7 +1,7 @@
 # Cardápio 3D
 
 Cardápio web onde o cliente toca num prato, abre a câmera e vê a comida
-**em tamanho real na mesa dele**. Sem instalar app.
+**em tamanho real na mesa ou na mão dele**. Sem instalar app.
 
 ## Como funciona o AR
 
@@ -36,18 +36,26 @@ HTTPS, então o teste de verdade é sempre pelo celular.
 Publicado no GitHub Pages a partir da branch `main`. Todo push republica
 sozinho, em cerca de um minuto. HTTPS é obrigatório e o próprio Pages força.
 
-## Dois modos de ver
+## Um botão só: a câmera decide
 
-**Na mesa** — usa o AR nativo (Quick Look no iPhone, Scene Viewer no Android).
-Ancora de verdade na superfície: você anda em volta e o prato fica parado.
-Só funciona em superfície plana; não pousa na mão, porque esses
-visualizadores detectam planos e mais nada.
+**Ver em tamanho real** (`mao.js`) abre a câmera do próprio site e olha o que
+está na frente dela a cada quadro. Havendo uma mão, o prato pousa na palma;
+não havendo, ele desce para a superfície apontada. A troca é contínua —
+ninguém escolhe o modo.
 
-**Na mão** (`mao.js`) — lê a câmera direto e usa o MediaPipe para achar os
-pontos da mão, desenhando o prato sobre a palma. A largura da palma
-(~8 cm) serve de régua para converter metros em pixels, então a escala
-continua real. Não tem profundidade verdadeira: é composição sobre a
-imagem, não ancoragem 3D. Em compensação funciona onde o AR nativo não vai.
+- **Mão** — pontos da mão pelo MediaPipe. A orientação vem da normal da palma,
+  sempre virada para a câmera, então o prato não capota quando a mão gira nem
+  troca de lado entre a esquerda e a direita. A distância é medida: o tamanho
+  da mão em pixels contra o tamanho dela em metros diz a que profundidade ela
+  está, e o prato entra na cena em escala 1.
+- **Mesa** — a gravidade lida no giroscópio diz onde o eixo da câmera fura o
+  plano da mesa. O ponto fica fixo no mundo, não na tela: girando o aparelho
+  o prato fica onde foi posto. Sem giroscópio ele aparece à frente, mais abaixo.
+  Não há rastreio de translação — andando, o prato acompanha.
+
+**Abrir o AR do aparelho** — fica como opção extra. É o AR nativo (Quick Look
+no iPhone, Scene Viewer no Android): ancora muito melhor na mesa, dá para andar
+em volta, mas só detecta planos e nunca pousa nada na mão.
 
 ## A escala é o ponto crítico
 

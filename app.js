@@ -63,7 +63,10 @@ const aviso   = $('#aviso');
 const medidas = $('#medidas');
 const spinner = $('#spinner');
 const dicaAr  = $('#dica-ar');
-const btnMao  = $('#btn-mao');
+const btnVer  = $('#btn-ver');
+
+// a camera propria e' o caminho principal: ela decide sozinha entre mao e mesa
+const TEM_CAMERA = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 
 let categoriaAtiva = 'Todos';
 
@@ -188,38 +191,48 @@ mv.addEventListener('load', () => {
 });
 
 // ---------------------------------------------------------------
-// Botão de AR
+// Botões
+//
+// "Ver em tamanho real" abre a câmera do próprio site, que identifica
+// sozinha se está apontada para uma mão ou para uma superfície. O AR
+// nativo do aparelho fica como opção extra: ele ancora melhor na mesa,
+// mas nunca coloca nada na mão.
 // ---------------------------------------------------------------
 function estadoAr() {
-  if (mv.canActivateAR) {
-    btnAr.hidden = false;
-    dicaAr.hidden = false;
+  btnVer.hidden = !TEM_CAMERA;
+  btnAr.hidden = !mv.canActivateAR;
+  dicaAr.hidden = !TEM_CAMERA;
+
+  if (TEM_CAMERA || mv.canActivateAR) {
     aviso.hidden = true;
   } else {
-    btnAr.hidden = true;
-    dicaAr.hidden = true;
     aviso.hidden = false;
     aviso.textContent = location.protocol === 'https:' || location.hostname === 'localhost'
-      ? 'Este aparelho não abre a câmera em AR. Abra o cardápio no celular (Safari no iPhone, Chrome no Android) para ver o prato na mesa.'
-      : 'O AR só funciona em HTTPS. Publique o site ou use um túnel HTTPS para testar no celular.';
+      ? 'Este aparelho não abre a câmera. Abra o cardápio no celular (Safari no iPhone, Chrome no Android) para ver o prato em tamanho real.'
+      : 'A câmera só funciona em HTTPS. Publique o site ou use um túnel HTTPS para testar no celular.';
   }
 }
 
 btnAr.addEventListener('click', () => mv.activateAR());
 
-// O modo "na minha mão" nao depende do AR nativo — so' de camera.
-if (navigator.mediaDevices?.getUserMedia) {
-  btnMao.hidden = false;
-  btnMao.addEventListener('click', async () => {
-    // O Safari do iPhone so' libera a camera se getUserMedia for chamado
-    // dentro do gesto do usuario. Carregar o modulo antes quebra isso,
-    // entao a camera vem primeiro e o resto depois.
+if (TEM_CAMERA) {
+  btnVer.addEventListener('click', async () => {
+    // O Safari do iPhone so' libera a camera e o giroscopio se os dois
+    // forem pedidos dentro do gesto do usuario. Por isso os dois pedidos
+    // saem juntos, antes de qualquer await, e o modulo vem depois.
+    const pedidoCamera = navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 } },
+      audio: false,
+    });
+    const pedidoGiro =
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function'
+        ? DeviceOrientationEvent.requestPermission().catch(() => 'denied')
+        : Promise.resolve('granted');
+
     let fluxo;
     try {
-      fluxo = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 } },
-        audio: false,
-      });
+      fluxo = await pedidoCamera;
     } catch (e) {
       aviso.hidden = false;
       aviso.textContent =
@@ -227,8 +240,10 @@ if (navigator.mediaDevices?.getUserMedia) {
         'Toque em "aA" na barra de endereco > Configuracoes do Site > Camera > Permitir.';
       return;
     }
+    // sem o giroscopio o prato ainda aparece, so' nao fica preso na mesa
+    await pedidoGiro;
 
-    const { abrirMao } = await import('./mao.js?v=4');
+    const { abrirMao } = await import('./mao.js?v=6');
     await abrirMao(pratoAtual, pratoAtual.modelo + `?v=${VERSAO_MODELOS}`, fluxo);
   });
 }
