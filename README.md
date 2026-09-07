@@ -3,20 +3,19 @@
 Cardápio web onde o cliente toca num prato, abre a câmera e vê a comida
 **em tamanho real na mesa ou na mão dele**. Sem instalar app.
 
-## Como funciona o AR
+## Como funciona
 
-Usa o `<model-viewer>` do Google, que aciona o AR nativo de cada sistema:
+Um botão só, e ele descobre sozinho onde pôr o prato. Nada de AR nativo:
+Quick Look e Scene Viewer só ancoram em plano, nunca pousam nada na mão, e
+ter os dois obrigaria o cliente a escolher o modo antes de apontar a câmera.
 
-| Aparelho | Tecnologia acionada | Arquivo usado |
-|---|---|---|
-| Android (Chrome) | Google Scene Viewer | `.glb` |
-| iPhone (Safari) | Apple AR Quick Look | `.usdz` |
+Então a câmera é lida direto pelo site (`getUserMedia`), a mão vem do
+MediaPipe e a mesa vem do giroscópio, tudo desenhado com three.js por cima
+do vídeo. O `<model-viewer>` ficou só como visualizador 3D da ficha, para
+girar o prato com o dedo antes de abrir a câmera.
 
-No iPhone, se o `.usdz` não for informado, o `model-viewer` gera um a partir
-do `.glb` automaticamente. Funciona, mas um `.usdz` feito à mão fica melhor.
-
-O atributo `ar-scale="fixed"` impede o cliente de redimensionar o prato com
-os dedos — é isso que garante que o tamanho visto seja o tamanho real.
+O tamanho real não vem do arquivo: vem do campo `larguraCm` de cada prato.
+Um `.glb` exportado em qualquer escala aparece do tamanho certo.
 
 ## Rodando
 
@@ -26,8 +25,9 @@ python -m http.server 5173
 
 Abra <http://localhost:5173>.
 
-**No computador o AR não abre** — só dá para girar o modelo. A câmera exige
-HTTPS, então o teste de verdade é sempre pelo celular.
+**No computador só dá para girar o modelo.** A câmera exige HTTPS e o
+giroscópio exige celular, então o teste de verdade é sempre pelo aparelho.
+`?debug=1` mostra o que o aparelho liberou.
 
 ## No ar
 
@@ -53,9 +53,6 @@ ninguém escolhe o modo.
   o prato fica onde foi posto. Sem giroscópio ele aparece à frente, mais abaixo.
   Não há rastreio de translação — andando, o prato acompanha.
 
-**Abrir o AR do aparelho** — fica como opção extra. É o AR nativo (Quick Look
-no iPhone, Scene Viewer no Android): ancora muito melhor na mesa, dá para andar
-em volta, mas só detecta planos e nunca pousa nada na mão.
 
 ## A escala é o ponto crítico
 
