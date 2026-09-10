@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#12100e" />
   <title>Cardápio 3D</title>
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <script type="importmap">
   {
     "imports": {
@@ -21,7 +21,7 @@
   <header class="topo">
     <div class="topo-inner">
       <h1>Cardápio</h1>
-      <p class="sub">Toque em um prato para ver o tamanho real na sua mesa ou na sua mão</p>
+      <p class="sub">Toque em um prato para ver o tamanho real na sua mesa</p>
     </div>
   </header>
 
@@ -63,9 +63,9 @@
       <p class="desc" id="f-desc"></p>
 
       <p class="dica-ar" id="dica-ar" hidden>
-        Aponte a câmera para onde quiser: se houver uma <b>mão</b> no quadro
-        o prato pousa na palma, se não houver ele desce para a
-        <b>mesa</b> à frente. A troca é automática.
+        Aponte o centro da câmera para a <b>mesa</b>. Assim que ela
+        reconhecer a superfície o prato pousa ali sozinho, no tamanho
+        real, e <b>fica parado</b> — girando o celular ele não sai do lugar.
       </p>
 
       <button class="btn-ar" id="btn-ver" hidden>
@@ -77,22 +77,22 @@
     </div>
   </div>
 
-  <!-- Modo "na minha mão": câmera + detecção de mão -->
-  <div class="mao" id="mao" hidden>
-    <video class="mao-video" id="mao-video" playsinline muted></video>
-    <canvas class="mao-canvas" id="mao-canvas"></canvas>
+  <!-- Câmera em tamanho real: o prato pousa na superfície apontada -->
+  <div class="cam" id="cam" hidden>
+    <video class="cam-video" id="cam-video" playsinline muted></video>
+    <canvas class="cam-canvas" id="cam-canvas"></canvas>
 
     <!-- o centro da câmera é a sonda: aparece só enquanto procura a mesa -->
-    <div class="mao-mira" id="mao-mira" hidden>
-      <span class="mao-mira-anel"></span>
+    <div class="cam-mira" id="cam-mira" hidden>
+      <span class="cam-mira-anel"></span>
     </div>
-    <button class="fechar" id="mao-fechar" aria-label="Fechar">&times;</button>
-    <div class="mao-barra">
-      <strong id="mao-titulo"></strong>
-      <span id="mao-estado"></span>
+    <button class="fechar" id="cam-fechar" aria-label="Fechar">&times;</button>
+    <div class="cam-barra">
+      <strong id="cam-titulo"></strong>
+      <span id="cam-estado"></span>
     </div>
   </div>
 
-  <script type="module" src="app.js?v=8"></script>
+  <script type="module" src="app.js?v=9"></script>
 </body>
 </html>

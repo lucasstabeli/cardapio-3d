@@ -1,18 +1,18 @@
 # Cardápio 3D
 
 Cardápio web onde o cliente toca num prato, abre a câmera e vê a comida
-**em tamanho real na mesa ou na mão dele**. Sem instalar app.
+**em tamanho real na mesa dele**. Sem instalar app.
 
 ## Como funciona
 
-Um botão só, e ele descobre sozinho onde pôr o prato. Nada de AR nativo:
-Quick Look e Scene Viewer só ancoram em plano, nunca pousam nada na mão, e
-ter os dois obrigaria o cliente a escolher o modo antes de apontar a câmera.
+Um botão só, e nenhum modo para escolher. Nada de AR nativo: Quick Look e
+Scene Viewer exigem apontar para um plano e mover o aparelho até a
+ancoragem concluir, e isso nunca funcionou em teste real aqui.
 
-Então a câmera é lida direto pelo site (`getUserMedia`), a mão vem do
-MediaPipe e a mesa vem do giroscópio, tudo desenhado com three.js por cima
-do vídeo. O `<model-viewer>` ficou só como visualizador 3D da ficha, para
-girar o prato com o dedo antes de abrir a câmera.
+Então a câmera é lida direto pelo site (`getUserMedia`), a superfície vem do
+giroscópio e tudo é desenhado com three.js por cima do vídeo. O
+`<model-viewer>` ficou só como visualizador 3D da ficha, para girar o prato
+com o dedo antes de abrir a câmera.
 
 O tamanho real não vem do arquivo: vem do campo `larguraCm` de cada prato.
 Um `.glb` exportado em qualquer escala aparece do tamanho certo.
@@ -36,24 +36,26 @@ giroscópio exige celular, então o teste de verdade é sempre pelo aparelho.
 Publicado no GitHub Pages a partir da branch `main`. Todo push republica
 sozinho, em cerca de um minuto. HTTPS é obrigatório e o próprio Pages força.
 
-## Um botão só: a câmera decide
+## Um botão só: a câmera pousa o prato
 
-**Ver em tamanho real** (`mao.js`) abre a câmera do próprio site e olha o que
-está na frente dela a cada quadro. Havendo uma mão, o prato pousa na palma;
-não havendo, ele desce para a superfície apontada. A troca é contínua —
-ninguém escolhe o modo.
+**Ver em tamanho real** (`camera.js`) abre a câmera do próprio site. O centro
+da câmera é a sonda: enquanto não houver superfície aparece só uma mira e
+nenhum prato. A gravidade lida no giroscópio diz quando o eixo da câmera está
+mesmo olhando para baixo; aí o prato pousa ali sozinho, sem botão.
 
-- **Mão** — pontos da mão pelo MediaPipe. A orientação vem da normal da palma,
-  sempre virada para a câmera, então o prato não capota quando a mão gira nem
-  troca de lado entre a esquerda e a direita. A distância é medida: o tamanho
-  da mão em pixels contra o tamanho dela em metros diz a que profundidade ela
-  está, e o prato entra na cena em escala 1.
-- **Mesa** — o centro da câmera é a sonda. Enquanto não houver superfície,
-  aparece só uma mira e nenhum prato. A gravidade lida no giroscópio diz
-  quando o eixo da câmera está mesmo olhando para baixo; aí o prato pousa
-  ali sozinho, sem botão. O ponto fica fixo no mundo, não na tela: girando o
-  aparelho o prato fica onde foi posto. Sem giroscópio ele aparece à frente e
-  a barra avisa. Não há rastreio de translação — andando, o prato acompanha.
+O ponto fica fixo no mundo, não na tela: girando o aparelho o prato fica onde
+foi posto. Sem giroscópio ele aparece à frente e a barra avisa.
+
+Dois limites que valem dizer na cara:
+
+- **Não é detecção de plano de verdade.** Nenhum navegador de iPhone oferece
+  isso numa página web. O que existe aqui é um palpite calibrado pela
+  gravidade — celular inclinado para baixo além de ~16°, a 35 cm de altura.
+- **Não há rastreio de translação.** Girar o aparelho no lugar funciona;
+  andando em volta, o prato acompanha em vez de ficar parado na mesa.
+
+O modo **"na minha mão"** (MediaPipe, palma como âncora) existiu até
+10/09/2026 e foi removido a pedido do cliente. Está no histórico do git.
 
 ## O tamanho não pode mudar
 
@@ -70,9 +72,6 @@ Dois cuidados garantem isso:
    direção muda: o prato passeia pelo quadro sem mudar de tamanho. Medido
    com giroscópio simulado — de 25° para 45° de inclinação, a largura
    desenhada ficou em 708 px nos dois.
-
-Na mão o tamanho acompanha a mão, e isso está certo: a mão é a régua, e o
-prato cresce com ela exatamente como um prato de verdade cresceria.
 
 A distância travada é a maior entre duas: a que a gravidade indica e a que
 faz o prato caber inteiro no quadro. Sem isso um peixe de 45 cm visto a 35 cm
@@ -110,7 +109,6 @@ Em [`app.js`](app.js), na lista `PRATOS`:
   emoji: '🦐',
   cor: '#33221e',
   modelo: 'assets/models/moqueca.glb',
-  modeloIos: '',        // opcional; vazio = gerado a partir do .glb
   larguraCm: 28,        // largura real, medida com régua
 }
 ```
@@ -120,7 +118,8 @@ Em [`app.js`](app.js), na lista `PRATOS`:
 ```
 index.html                    estrutura da página e do visor 3D
 styles.css                    visual
-app.js                        dados dos pratos + lógica do AR e da medição
+app.js                        dados dos pratos + tela da ficha e da medição
+camera.js                     câmera em tamanho real (three.js + giroscópio)
 ferramentas/escalar_glb.py    corrige a escala de um .glb
 assets/models/                modelos 3D
 ```

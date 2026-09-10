@@ -186,9 +186,8 @@ mv.addEventListener('load', () => {
 // Botões
 //
 // Um botão só. "Ver em tamanho real" abre a câmera do próprio site, que
-// identifica sozinha se está apontada para uma mão ou para uma superfície.
-// Não há AR nativo aqui: ele obrigaria a escolher entre mesa e mão, porque
-// Quick Look e Scene Viewer só ancoram em plano e nunca pousam na palma.
+// pousa o prato na superfície apontada e o deixa fixo ali.
+// Não há AR nativo aqui — ver o histórico do git para o porquê.
 // ---------------------------------------------------------------
 function estadoAr() {
   btnVer.hidden = !TEM_CAMERA;
@@ -230,8 +229,8 @@ if (TEM_CAMERA) {
     // sem o giroscopio o prato ainda aparece, so' nao fica preso na mesa
     await pedidoGiro;
 
-    const { abrirMao } = await import('./mao.js?v=8');
-    await abrirMao(pratoAtual, pratoAtual.modelo + `?v=${VERSAO_MODELOS}`, fluxo);
+    const { abrirCamera } = await import('./camera.js?v=9');
+    await abrirCamera(pratoAtual, pratoAtual.modelo + `?v=${VERSAO_MODELOS}`, fluxo);
   });
 }
 mv.addEventListener('load', estadoAr);
