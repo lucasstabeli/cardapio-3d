@@ -1,9 +1,13 @@
 // ---------------------------------------------------------------
 // Camera em tamanho real — o prato pousa na superficie apontada
 //
-// Uma tela so'. A camera abre, voce aponta o centro dela para a mesa e o
-// prato pousa ali sozinho, no tamanho de verdade. Nao ha' botao de
-// posicionar e nao ha' modo para escolher.
+// ESTE E' O CAMINHO RESERVA. Desde 10/09/2026 o botao "Ver em tamanho
+// real" abre o AR nativo (Quick Look no iPhone, Scene Viewer no Android),
+// que ancora de verdade porque quem acha o plano e' o ARKit/ARCore. Este
+// arquivo so' entra em aparelho sem AR nativo. Ver app.js.
+//
+// A camera abre, voce aponta o centro dela para a mesa e o prato pousa ali
+// sozinho, no tamanho de verdade. Nao ha' botao de posicionar.
 //
 //  1. A superficie vem do giroscopio. A gravidade diz para onde e' baixo,
 //     entao da' para saber quando o eixo da camera esta' olhando para uma
@@ -22,6 +26,9 @@
 //
 //  4. O modo "na minha mao" (MediaPipe) saiu em 10/09/2026, a pedido do
 //     Lucas. Quem quiser de volta, esta' no historico do git.
+//
+//  5. Por causa do item 3, nao tente fazer este arquivo parecer real. Ele
+//     mostra o tamanho; quem faz parecer real e' o AR nativo.
 // ---------------------------------------------------------------
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';

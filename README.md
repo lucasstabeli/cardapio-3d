@@ -5,17 +5,35 @@ Cardápio web onde o cliente toca num prato, abre a câmera e vê a comida
 
 ## Como funciona
 
-Um botão só, e nenhum modo para escolher. Nada de AR nativo: Quick Look e
-Scene Viewer exigem apontar para um plano e mover o aparelho até a
-ancoragem concluir, e isso nunca funcionou em teste real aqui.
+Um botão só para o cliente — "Ver em tamanho real" — e dois caminhos por
+baixo dele.
 
-Então a câmera é lida direto pelo site (`getUserMedia`), a superfície vem do
-giroscópio e tudo é desenhado com three.js por cima do vídeo. O
-`<model-viewer>` ficou só como visualizador 3D da ficha, para girar o prato
-com o dedo antes de abrir a câmera.
+**1. AR nativo (preferido).** Quick Look no iPhone, Scene Viewer no Android,
+pelo `<model-viewer>`. É o único que enxerga a mesa de verdade: quem acha o
+plano e ancora o prato é o ARKit ou o ARCore. O prato fica no lugar quando
+o cliente anda em volta, e ganha sombra de contato e a luz do ambiente. O
+USDZ do iPhone o próprio model-viewer gera do `.glb` — não há arquivo extra
+no repositório.
 
-O tamanho real não vem do arquivo: vem do campo `larguraCm` de cada prato.
-Um `.glb` exportado em qualquer escala aparece do tamanho certo.
+**2. Câmera própria (reserva).** Só entra onde não existe AR nativo. A
+câmera é lida direto pelo site (`getUserMedia`), a superfície é adivinhada
+pelo giroscópio e o desenho é three.js por cima do vídeo. Não há rastreio de
+translação: girando o celular funciona, andando o prato acompanha. Serve
+para dar a ideia do tamanho, não para enganar o olho.
+
+O AR nativo já tinha sido removido uma vez (`677864e`), e o motivo era o
+modo "na minha mão": Quick Look e Scene Viewer pedem um plano e ficam
+mandando mover o aparelho quando você aponta para a palma. O modo mão saiu
+em 10/09/2026 e levou o motivo junto — apontar para a mesa é exatamente o
+caso para o qual o AR nativo foi feito.
+
+Na câmera própria o tamanho vem do campo `larguraCm` de cada prato, então um
+`.glb` fora de escala ainda aparece certo. **No AR nativo não**: o USDZ sai
+do arquivo, e o `ar-scale="fixed"` impede o cliente de esticar o prato. Ou
+seja, o `.glb` precisa estar na escala real — 1 unidade = 1 metro. Os três
+atuais estão; para corrigir um novo, use `ferramentas/escalar_glb.py`, que
+grava a escala nos vértices (nó pai com `scale` se perde na conversão para
+USDZ).
 
 ## Rodando
 
@@ -25,9 +43,10 @@ python -m http.server 5173
 
 Abra <http://localhost:5173>.
 
-**No computador só dá para girar o modelo.** A câmera exige HTTPS e o
-giroscópio exige celular, então o teste de verdade é sempre pelo aparelho.
-`?debug=1` mostra o que o aparelho liberou.
+**No computador só dá para girar o modelo.** O AR nativo exige celular, e a
+câmera própria exige HTTPS mais giroscópio — o teste de verdade é sempre
+pelo aparelho. `?debug=1` mostra por qual caminho o prato vai aparecer:
+`ar nativo: sim` é o bom.
 
 ## No ar
 

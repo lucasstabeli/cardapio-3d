@@ -230,3 +230,11 @@ model-viewer::part(default-ar-button){display:none}
   0%,100%{transform:scale(1);opacity:.85}
   50%{transform:scale(.86);opacity:1}
 }
+
+/* O model-viewer desenha um botao de AR proprio dentro do visor quando o
+   atributo "ar" esta' ligado. O slot ar-button troca esse botao pelo nosso,
+   e este bloco some com ele: o cliente ve' um botao so', o "Ver em tamanho
+   real" da ficha, que chama activateAR() por baixo. */
+.mv-ar-oculto {
+  display: none !important;
+}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#12100e" />
   <title>Cardápio 3D</title>
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
   <script type="importmap">
   {
     "imports": {
@@ -48,8 +48,16 @@
         shadow-intensity="1"
         environment-image="neutral"
         exposure="1"
-        interaction-prompt="auto">
+        interaction-prompt="auto"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="fixed"
+        ar-placement="floor">
         <div class="carregando" id="spinner" slot="progress-bar"></div>
+        <!-- o model-viewer desenha um botao de AR proprio dentro do visor.
+             Este slot vazio o apaga: quem abre o AR e' o "Ver em tamanho
+             real" la' embaixo, para o cliente continuar vendo um botao so'. -->
+        <button slot="ar-button" class="mv-ar-oculto" aria-hidden="true" tabindex="-1"></button>
       </model-viewer>
 
       <div class="medidas" id="medidas" hidden></div>
@@ -62,11 +70,8 @@
       </div>
       <p class="desc" id="f-desc"></p>
 
-      <p class="dica-ar" id="dica-ar" hidden>
-        Aponte o centro da câmera para a <b>mesa</b>. Assim que ela
-        reconhecer a superfície o prato pousa ali sozinho, no tamanho
-        real, e <b>fica parado</b> — girando o celular ele não sai do lugar.
-      </p>
+      <!-- o texto muda conforme o caminho disponivel; quem escreve e' o app.js -->
+      <p class="dica-ar" id="dica-ar" hidden></p>
 
       <button class="btn-ar" id="btn-ver" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 1.5a1.5 1.5 0 0 0-3 0V10H9V3.5a1.5 1.5 0 0 0-3 0V13l-1.2-2a1.5 1.5 0 0 0-2.6 1.5l3 5.4A7 7 0 0 0 11.4 22H14a6 6 0 0 0 6-6V6.5a1.5 1.5 0 0 0-3 0V10h-1V3.5a1.5 1.5 0 0 0-3 0V10h-1V1.5z"/></svg>
@@ -93,6 +98,6 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=9"></script>
+  <script type="module" src="app.js?v=10"></script>
 </body>
 </html>

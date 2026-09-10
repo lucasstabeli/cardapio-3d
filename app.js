@@ -60,7 +60,7 @@ const spinner = $('#spinner');
 const dicaAr  = $('#dica-ar');
 const btnVer  = $('#btn-ver');
 
-// a camera propria e' o caminho principal: ela decide sozinha entre mao e mesa
+// a camera propria e' a reserva: entra so' onde nao ha' AR nativo
 const TEM_CAMERA = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 
 let categoriaAtiva = 'Todos';
@@ -185,54 +185,112 @@ mv.addEventListener('load', () => {
 // ---------------------------------------------------------------
 // Botões
 //
-// Um botão só. "Ver em tamanho real" abre a câmera do próprio site, que
-// pousa o prato na superfície apontada e o deixa fixo ali.
-// Não há AR nativo aqui — ver o histórico do git para o porquê.
+// Um botão só para o cliente, dois caminhos por baixo dele.
+//
+//  1. AR nativo — Quick Look no iPhone, Scene Viewer no Android. É o único
+//     que enxerga a mesa de verdade: o ARKit/ARCore acha o plano, ancora o
+//     prato no mundo e desenha sombra de contato. Dá para andar em volta
+//     que ele fica onde foi posto. Preferido sempre que existir.
+//
+//  2. Câmera própria (camera.js) — reserva para aparelho sem AR nativo.
+//     Ela adivinha a mesa pelo giroscópio: girando o celular funciona, mas
+//     andando o prato acompanha. Serve para dar a ideia do tamanho.
+//
+// O AR nativo tinha saído em 677864e, e o motivo era o modo "na minha mão":
+// Quick Look e Scene Viewer só ancoram em plano e nunca pousariam nada na
+// palma. O modo mão saiu em 10/09/2026 e levou esse motivo junto.
+//
+// O ar-scale e' "fixed" de proposito: o prato tem um tamanho so' e o
+// cliente nao deve poder esticar. Isso exige .glb na escala certa — os
+// tres estao, conferidos com ferramentas/escalar_glb.py.
 // ---------------------------------------------------------------
+const DICA = {
+  nativo:
+    'Aponte a câmera para a <b>mesa</b> e mova o celular devagar até o ' +
+    'aparelho reconhecer a superfície. O prato pousa ali <b>ancorado</b>, ' +
+    'no tamanho real — dá para andar em volta e ver de todos os lados.',
+  proprio:
+    'Aponte o centro da câmera para a <b>mesa</b>: o prato pousa ali ' +
+    'sozinho, no tamanho real. Neste aparelho a posição vem do giroscópio, ' +
+    'então gire o celular à vontade, mas <b>fique no lugar</b> — andando, ' +
+    'o prato acompanha você.',
+};
+
+let caminhoAr = 'nenhum';
+
 function estadoAr() {
-  btnVer.hidden = !TEM_CAMERA;
-  dicaAr.hidden = !TEM_CAMERA;
-  aviso.hidden = TEM_CAMERA;
+  // canActivateAR so' fica verdadeiro depois que o model-viewer carrega o
+  // modelo e confere o suporte do aparelho; por isso estadoAr e' chamado
+  // de novo no load.
+  caminhoAr = mv.canActivateAR ? 'nativo' : TEM_CAMERA ? 'proprio' : 'nenhum';
 
-  if (!TEM_CAMERA) {
-    aviso.textContent = location.protocol === 'https:' || location.hostname === 'localhost'
-      ? 'Este aparelho não abre a câmera. Abra o cardápio no celular (Safari no iPhone, Chrome no Android) para ver o prato em tamanho real.'
-      : 'A câmera só funciona em HTTPS. Publique o site ou use um túnel HTTPS para testar no celular.';
+  btnVer.hidden = caminhoAr === 'nenhum';
+  dicaAr.hidden = caminhoAr === 'nenhum';
+  aviso.hidden = caminhoAr !== 'nenhum';
+
+  if (caminhoAr !== 'nenhum') {
+    dicaAr.innerHTML = DICA[caminhoAr];
+    return;
   }
+
+  aviso.textContent = location.protocol === 'https:' || location.hostname === 'localhost'
+    ? 'Este aparelho não abre a câmera. Abra o cardápio no celular (Safari no iPhone, Chrome no Android) para ver o prato em tamanho real.'
+    : 'A câmera só funciona em HTTPS. Publique o site ou use um túnel HTTPS para testar no celular.';
 }
 
-if (TEM_CAMERA) {
-  btnVer.addEventListener('click', async () => {
-    // O Safari do iPhone so' libera a camera e o giroscopio se os dois
-    // forem pedidos dentro do gesto do usuario. Por isso os dois pedidos
-    // saem juntos, antes de qualquer await, e o modulo vem depois.
-    const pedidoCamera = navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 } },
-      audio: false,
-    });
-    const pedidoGiro =
-      typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function'
-        ? DeviceOrientationEvent.requestPermission().catch(() => 'denied')
-        : Promise.resolve('granted');
-
-    let fluxo;
-    try {
-      fluxo = await pedidoCamera;
-    } catch (e) {
-      aviso.hidden = false;
-      aviso.textContent =
-        'Nao consegui abrir a camera (' + e.name + '). ' +
-        'Toque em "aA" na barra de endereco > Configuracoes do Site > Camera > Permitir.';
-      return;
-    }
-    // sem o giroscopio o prato ainda aparece, so' nao fica preso na mesa
-    await pedidoGiro;
-
-    const { abrirCamera } = await import('./camera.js?v=9');
-    await abrirCamera(pratoAtual, pratoAtual.modelo + `?v=${VERSAO_MODELOS}`, fluxo);
+// ---------------------------------------------------------------
+// A camera propria: o Safari do iPhone so' libera camera e giroscopio se
+// os dois forem pedidos dentro do gesto do usuario. Por isso os dois
+// pedidos saem juntos, antes de qualquer await, e o modulo vem depois.
+// ---------------------------------------------------------------
+async function abrirCameraPropria() {
+  const pedidoCamera = navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'environment', width: { ideal: 1280 } },
+    audio: false,
   });
+  const pedidoGiro =
+    typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function'
+      ? DeviceOrientationEvent.requestPermission().catch(() => 'denied')
+      : Promise.resolve('granted');
+
+  let fluxo;
+  try {
+    fluxo = await pedidoCamera;
+  } catch (e) {
+    aviso.hidden = false;
+    aviso.textContent =
+      'Nao consegui abrir a camera (' + e.name + '). ' +
+      'Toque em "aA" na barra de endereco > Configuracoes do Site > Camera > Permitir.';
+    return;
+  }
+  // sem o giroscopio o prato ainda aparece, so' nao fica preso na mesa
+  await pedidoGiro;
+
+  const { abrirCamera } = await import('./camera.js?v=10');
+  await abrirCamera(pratoAtual, pratoAtual.modelo + `?v=${VERSAO_MODELOS}`, fluxo);
 }
+
+btnVer.addEventListener('click', async () => {
+  if (caminhoAr === 'nativo') {
+    try {
+      await mv.activateAR();
+      return;
+    } catch (e) {
+      // o aparelho prometeu AR e nao entregou: cai para a camera propria
+      // em vez de deixar o botao sem resposta
+      if (!TEM_CAMERA) {
+        aviso.hidden = false;
+        aviso.textContent = 'Nao consegui abrir o AR deste aparelho (' + e.name + ').';
+        return;
+      }
+      caminhoAr = 'proprio';
+      dicaAr.innerHTML = DICA.proprio;
+    }
+  }
+  if (caminhoAr === 'proprio') await abrirCameraPropria();
+});
+
 mv.addEventListener('load', estadoAr);
 customElements.whenDefined('model-viewer').then(estadoAr);
 
@@ -241,9 +299,10 @@ montarFiltros();
 montarGrade();
 
 // ---------------------------------------------------------------
-// Diagnóstico — abra a página com ?debug=1 para ver o que o aparelho
-// libera: sem câmera não há como mostrar o prato, e sem giroscópio ele
-// aparece à frente em vez de ficar preso na mesa.
+// Diagnóstico — abra a página com ?debug=1 para ver por qual caminho o
+// prato vai aparecer. "ar nativo: sim" é o bom: quem ancora é o ARKit ou
+// o ARCore. Caindo para a câmera própria, aí sim importam câmera e
+// giroscópio — sem ele o prato aparece à frente em vez de na mesa.
 // ---------------------------------------------------------------
 let caixaDiag = null;
 
@@ -279,6 +338,8 @@ async function mostrarDiagnostico() {
     `aparelho   : ${/iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Android/i.test(ua) ? 'Android' : 'outro'}`,
     `navegador  : ${/CriOS/.test(ua) ? 'Chrome iOS' : /Safari/.test(ua) && !/Chrome/.test(ua) ? 'Safari' : /Chrome/.test(ua) ? 'Chrome' : '?'}`,
     `https      : ${location.protocol === 'https:' ? 'sim' : 'NAO'}`,
+    `ar nativo  : ${mv.canActivateAR ? 'sim (' + (mv.arModes || '') + ')' : 'NAO'}`,
+    `caminho    : ${caminhoAr}`,
     `camera     : ${TEM_CAMERA ? 'sim' : 'NAO'}`,
     `giroscopio : ${giro}`,
     `pede permis: ${typeof DeviceOrientationEvent !== 'undefined' &&
